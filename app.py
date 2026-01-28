@@ -10,7 +10,7 @@ import streamlit.components.v1 as components
 import os
 
 st.set_page_config(
-    page_title="Crimson Abyss Forge",
+    page_title="PornGore.AI",
     page_icon="🔥",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -29,9 +29,24 @@ st.markdown("""
     .stTextArea textarea { background-color: #333; color: #fff; }
     .sidebar .sidebar-content { background-color: #222; }
     .disabled-button { background-color: #555 !important; cursor: not-allowed !important; }
+    .fade-in-image {
+        animation: fadeIn 2.5s ease-in-out;
+        opacity: 1;
+        border: 8px solid #444;
+        border-radius: 4px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.7);
+        margin: 16px 0;
+        max-width: 100%;
+    }
+    @keyframes fadeIn {
+        0%   { opacity: 0; transform: scale(0.92); filter: blur(6px); }
+        60%  { opacity: 0.4; transform: scale(0.98); filter: blur(2px); }
+        100% { opacity: 1; transform: scale(1); filter: blur(0); }
+    }
     </style>
 """, unsafe_allow_html=True)
 
+# Session state initialization
 if 'user_logged_in' not in st.session_state:
     st.session_state.user_logged_in = False
 if 'credits' not in st.session_state:
@@ -42,7 +57,7 @@ if 'voice_attempt' not in st.session_state:
     st.session_state.voice_attempt = False
 
 ollama_model = os.getenv("OLLAMA_MODEL", "mannix/llama3.1-8b-lexi")
-a1111_url = os.getenv("A1111_URL", "http://127.0.0.1:7860")
+a1111_url   = os.getenv("A1111_URL",   "http://127.0.0.1:7860")
 
 def voice_login():
     components.html("""
@@ -61,6 +76,7 @@ def voice_login():
         recognition.start();
         </script>
     """, height=0)
+
     password = st.text_input("Enter 'duck' to trigger voice auth", type="password")
     if password.lower() == 'duck' and not st.session_state.voice_attempt:
         st.session_state.voice_attempt = True
@@ -80,13 +96,11 @@ if not st.session_state.user_logged_in:
         st.rerun()
 else:
     with st.sidebar:
-        st.title("🔥 Crimson Abyss Forge")
-        st.markdown("Elite tool for ultimate NSFW/Violence/Combo creations.\nCredits: {}".format(
-            'Unlimited' if st.session_state.credits == float('inf') else int(st.session_state.credits)
-        ))
+        st.title("🔥 PornGore.AI")
+        st.markdown(f"Credits: {'Unlimited' if st.session_state.credits == float('inf') else int(st.session_state.credits)}")
         st.text_input("Ollama Model", value=ollama_model, disabled=True)
         st.text_input("A1111 API", value=a1111_url, disabled=True)
-        use_controlnet = st.checkbox("Use ControlNet", value=False)
+        use_controlnet = st.checkbox("Use ControlNet (advanced reference)", value=False)
         denoising = st.slider("Denoising Strength", 0.0, 1.0, 0.35, 0.05)
         image_size = st.selectbox("Image Size", [
             "Banner (1920x300)", "Banner (728x90)", "Square (1024x1024)", "Portrait (768x1024)"
@@ -96,7 +110,7 @@ else:
         if st.button("Buy Credits"):
             st.info("Stripe placeholder: Integrate checkout here.")
 
-    st.title("🔥 Crimson Abyss Forge")
+    st.title("🔥 PornGore.AI")
     st.markdown("Craft hyper-realistic, provocative depravity with precision. More details yield superior results.")
 
     description = st.text_area(
@@ -162,7 +176,7 @@ else:
             status.update(state="complete")
 
         st.subheader("Forged Prompt")
-        st.code(enhanced)
+        st.code(enhanced, language=None)
 
         if not ref_files:
             st.warning("No references – pure text forge.")
@@ -211,15 +225,20 @@ else:
                     }
 
                 time.sleep(2.0 + random.uniform(0.8, 2.2))
+
                 try:
                     resp = requests.post(f"{a1111_url}/sdapi/v1/img2img", json=payload, timeout=300)
                     resp.raise_for_status()
                     result = resp.json()
                     gen_status.update(state="complete")
+
                     for i, b64_img in enumerate(result['images']):
                         img_bytes = base64.b64decode(b64_img)
                         generated_img = Image.open(io.BytesIO(img_bytes))
+                        st.markdown('<div class="fade-in-image">', unsafe_allow_html=True)
                         st.image(generated_img, caption=f"Abyss Manifestation {i+1}")
+                        st.markdown('</div>', unsafe_allow_html=True)
+
                 except Exception as e:
                     gen_status.update(state="error")
                     st.error(f"Forge failed: {e}")
