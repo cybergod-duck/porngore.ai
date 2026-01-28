@@ -285,3 +285,5 @@ else:
 
     st.markdown("---")
     st.caption("PornGore.AI – Absolute freedom | Atlanta | 2026")
+cat Pipfile
+rm Pipfile Pipfile.lock 2>/dev/null; ls -la
