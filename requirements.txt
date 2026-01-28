@@ -1,8 +1,4 @@
-# Overwrite with clean content
-cat > requirements.txt << 'EOF'
 streamlit==1.42.0
 ollama==0.3.3
 requests==2.32.3
 pillow==11.1.0
-EOF
-
