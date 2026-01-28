@@ -1,8 +1,8 @@
+# app.py
 import streamlit as st
 import ollama
 import requests
 import base64
-from PIL import Image
 import io
 import time
 import random
@@ -91,57 +91,33 @@ st.markdown("""
         border-radius: 6px;
         font-size: 1.05em;
     }
-    .debug-info {
-        background: #1a1a1a;
-        padding: 12px;
-        border-radius: 6px;
-        margin: 16px 0;
-        font-family: monospace;
-        font-size: 0.9em;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# ── Session state ───────────────────────────────────────────────────────────────
+# Session state
 if 'user_logged_in' not in st.session_state: st.session_state.user_logged_in = False
 if 'credits' not in st.session_state: st.session_state.credits = 10
 if 'content_mode' not in st.session_state: st.session_state.content_mode = None
 if 'voice_attempt' not in st.session_state: st.session_state.voice_attempt = False
 
-# ── Load & clean environment variables ─────────────────────────────────────────
+# Environment variables with clean fallback and warning
 ollama_model_raw = os.getenv("OLLAMA_MODEL", "").strip()
 a1111_url_raw    = os.getenv("A1111_URL", "").strip()
 
-ollama_model = ollama_model_raw if ollama_model_raw else "mannix/llama3.1-8b-lexi"
-a1111_url    = a1111_url_raw if a1111_url_raw else "http://127.0.0.1:7860"
+ollama_model = ollama_model_raw or "mannix/llama3.1-8b-lexi"
+a1111_url    = a1111_url_raw or "http://127.0.0.1:7860"
 
-# Show configuration warning if vars are missing or empty
 if not ollama_model_raw or not a1111_url_raw:
     st.markdown("""
         <div class="config-warning">
-        <strong>Environment variables missing or empty!</strong><br><br>
-        Go to Vercel dashboard → your project → <strong>Settings</strong> → <strong>Environment Variables</strong>.<br>
-        Add exactly these (case-sensitive, no spaces):<br><br>
-        <strong>Name:</strong> OLLAMA_MODEL<br>
-        <strong>Value:</strong> mannix/llama3.1-8b-lexi<br><br>
-        <strong>Name:</strong> A1111_URL<br>
-        <strong>Value:</strong> http://127.0.0.1:7860 (or your real backend URL later)<br><br>
-        Click <strong>Save</strong>, then redeploy the project.
+        <strong>Environment variables missing!</strong><br><br>
+        In Vercel dashboard → Settings → Environment Variables add:<br>
+        • OLLAMA_MODEL = mannix/llama3.1-8b-lexi<br>
+        • A1111_URL = http://127.0.0.1:7860 (or your real backend)<br>
+        Then redeploy.
         </div>
     """, unsafe_allow_html=True)
 
-    # Debug info to help confirm what Vercel actually sent
-    st.markdown(f"""
-        <div class="debug-info">
-        <strong>Debug (visible only when config missing):</strong><br>
-        OLLAMA_MODEL raw from env: '{ollama_model_raw}'<br>
-        A1111_URL raw from env: '{a1111_url_raw}'<br>
-        Cleaned OLLAMA_MODEL: '{ollama_model}'<br>
-        Cleaned A1111_URL: '{a1111_url}'
-        </div>
-    """, unsafe_allow_html=True)
-
-# ── Voice auth ──────────────────────────────────────────────────────────────────
 def voice_login():
     components.html("""
         <script>
@@ -151,11 +127,9 @@ def voice_login():
             if (t.includes('duck')) {
                 document.querySelector('input[type="password"]').value = 'owner-unlocked';
                 document.querySelector('button[kind="primary"]').click();
-            } else {
-                alert('No match. Try again.');
             }
         };
-        rec.onerror = () => alert('Voice error – check microphone permissions.');
+        rec.onerror = () => alert('Voice error – check microphone.');
         rec.start();
         </script>
     """, height=0)
@@ -170,7 +144,6 @@ def voice_login():
         st.success("Owner privileges activated — unlimited generations.")
         st.rerun()
 
-# ── Login gate ──────────────────────────────────────────────────────────────────
 if not st.session_state.user_logged_in:
     st.title("PornGore.AI")
     st.markdown("Access restricted to verified users and owner.")
@@ -181,7 +154,7 @@ if not st.session_state.user_logged_in:
 else:
     with st.sidebar:
         st.title("🔥 PornGore.AI")
-        st.markdown(f"**Credits remaining:** {'∞' if st.session_state.credits == float('inf') else st.session_state.credits}")
+        st.markdown(f"**Credits:** {'∞' if st.session_state.credits == float('inf') else st.session_state.credits}")
         st.text_input("Ollama Model", value=ollama_model, disabled=True)
         st.text_input("A1111 API", value=a1111_url, disabled=True)
         use_controlnet = st.checkbox("Enable ControlNet", value=False)
@@ -251,10 +224,8 @@ else:
             else:
                 with st.status("Rendering your creation...", expanded=True) as gs:
                     time.sleep(1.7)
-                    img = Image.open(refs[0])
-                    buf = io.BytesIO()
-                    img.save(buf, "PNG")
-                    init_img = base64.b64encode(buf.getvalue()).decode()
+                    ref_bytes = refs[0].getvalue()
+                    init_img = base64.b64encode(ref_bytes).decode()
 
                     sz_map = {
                         "Banner Wide (1920×300)":   (1920, 300),
@@ -301,10 +272,9 @@ else:
                         else:
                             for i, b64 in enumerate(res['images']):
                                 try:
-                                    raw = base64.b64decode(b64)
-                                    final_img = Image.open(io.BytesIO(raw))
+                                    img_bytes = base64.b64decode(b64)
                                     st.markdown('<div class="polaroid">', unsafe_allow_html=True)
-                                    st.image(final_img, use_column_width=True)
+                                    st.image(img_bytes, use_column_width=True)
                                     st.markdown(f'<div class="caption">Creation {i+1}</div>', unsafe_allow_html=True)
                                     st.markdown('</div>', unsafe_allow_html=True)
                                 except:
