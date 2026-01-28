@@ -1,0 +1,7 @@
+# requirements.txt
+# Exact versions pinned for reliable Vercel/Streamlit deployments
+
+streamlit==1.42.0
+ollama==0.3.3
+requests==2.32.3
+pillow==11.1.0
