@@ -3,11 +3,16 @@
   "builds": [
     {
       "src": "app.py",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "public" }
+      "use": "@vercel/python"
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "app.py" }
-  ]
+    {
+      "src": "/.*",
+      "dest": "app.py"
+    }
+  ],
+  "installCommand": "pip install --no-cache-dir -r requirements.txt",
+  "buildCommand": "echo 'No build step needed for Streamlit'",
+  "outputDirectory": "."
 }
