@@ -3,7 +3,11 @@
   "builds": [
     {
       "src": "app.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "250mb",
+        "runtime": "python3.10"
+      }
     }
   ],
   "routes": [
@@ -12,7 +16,10 @@
       "dest": "app.py"
     }
   ],
-  "installCommand": "pip install --no-cache-dir -r requirements.txt",
-  "buildCommand": "echo 'No build step needed for Streamlit'",
-  "outputDirectory": "."
+  "functions": {
+    "app.py": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  }
 }
