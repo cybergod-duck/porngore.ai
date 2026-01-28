@@ -1,4 +1,4 @@
-# Pipfile (pins Python 3.9 for smaller wheels)
+# Pipfile
 [[source]]
 url = "https://pypi.org/simple"
 verify_ssl = true
