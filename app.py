@@ -93,29 +93,33 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Session state
-if 'user_logged_in' not in st.session_state: st.session_state.user_logged_in = False
-if 'credits' not in st.session_state: st.session_state.credits = 10
-if 'content_mode' not in st.session_state: st.session_state.content_mode = None
-if 'voice_attempt' not in st.session_state: st.session_state.voice_attempt = False
+if 'user_logged_in' not in st.session_state:
+    st.session_state.user_logged_in = False
+if 'credits' not in st.session_state:
+    st.session_state.credits = 10
+if 'content_mode' not in st.session_state:
+    st.session_state.content_mode = None
+if 'voice_attempt' not in st.session_state:
+    st.session_state.voice_attempt = False
 
 # OpenRouter config
-api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
+openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
 a1111_url = os.getenv("A1111_URL", "").strip() or "http://127.0.0.1:7860"
 
-if not api_key:
+if not openrouter_key:
     st.markdown("""
         <div class="config-warning">
         <strong>OpenRouter API key missing!</strong><br><br>
         Get a free key at <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a>.<br>
         Add in Vercel → Settings → Environment Variables:<br>
         • Name: OPENROUTER_API_KEY<br>
-        • Value: sk-or-... (your key)<br><br>
-        Also add A1111_URL to your public Automatic1111 endpoint.<br>
+        • Value: your key (sk-or-...)<br><br>
+        Also set A1111_URL to your_1111 public endpoint.<br>
         Then redeploy.
         </div>
     """, unsafe_allow_html=True)
 
-model = "venice/uncensored:free"  # Free uncensored model on OpenRouter
+model = "venice/uncensored:free"
 
 def voice_login():
     components.html("""
@@ -154,10 +158,10 @@ else:
     with st.sidebar:
         st.title("🔥 PornGore.AI")
         st.markdown(f"**Credits:** {'∞' if st.session_state.credits == float('inf') else st.session_state.credits}")
-        st.text_input("Prompt Model", value="venice/uncensored:free (OpenRouter)", disabled=True)
+        st.text_input("Prompt Model", value=model, disabled=True)
         st.text_input("A1111 API", value=a1111_url, disabled=True)
         use_controlnet = st.checkbox("Enable ControlNet", value=False)
-        denoising = st.slider("Denoising Strength", 0.0, 1.0, 0.35, 0.05)
+        denoising = st.slider("Denoising Strength", 0.0, 1.00.35, 0.05)
         image_size = st.selectbox("Size", [
             "Banner Wide (1920×300)", "Banner Narrow (728×90)",
             "Square (1024×1024)", "Portrait (768×1024)"
@@ -192,7 +196,7 @@ else:
             st.error("No credits left – buy more.")
         elif not st.session_state.content_mode:
             st.error("Pick NSFW, VIOLENCE or BOTH.")
-        elif not api_key:
+        elif not openrouter_key:
             st.error("OpenRouter API key required – add in Vercel env vars.")
         else:
             st.session_state.credits -= 1
@@ -207,8 +211,8 @@ else:
                 Output ONLY the final prompt.
                 """
                 headers = {
-                    "Authorization": f"Bearer {api_key}",
-                    "HTTP-Referer": st.secrets.get("REFERER", "https://porngore.ai"),
+                    "Authorization": f"Bearer {openrouter_key}",
+                    "HTTP-Referer": "https://porngore.ai",
                     "X-Title": "PornGore.AI",
                 }
                 payload = {
@@ -293,7 +297,7 @@ else:
                                     st.error(f"Image {i+1} decode failed.")
                     except Exception as e:
                         gs.update(state="error")
-                        st.error(f"Render failed: {str(e)} – ensure A1111 is publicly accessible at the URL in env vars.")
+                        st.error(f"Render failed: {str(e)} – ensure A1111 is publicly accessible.")
 
     st.markdown("---")
     st.caption("PornGore.AI – Absolute freedom | Atlanta | 2026")
