@@ -1,4 +1,3 @@
-# app.py  (this is the only Python file you need – keep it as-is in the root)
 import streamlit as st
 import ollama
 import requests
@@ -84,18 +83,65 @@ st.markdown("""
         65%  { opacity: 0.75; filter: brightness(0.9) contrast(0.9) sepia(0.1) blur(1px); }
         100% { opacity: 1; filter: brightness(1) contrast(1) sepia(0) blur(0); transform: scale(1) rotate(1.8deg); }
     }
+    .config-warning {
+        background: #3c2f2f;
+        border-left: 5px solid #b22222;
+        padding: 16px;
+        margin: 24px 0;
+        border-radius: 6px;
+        font-size: 1.05em;
+    }
+    .debug-info {
+        background: #1a1a1a;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 16px 0;
+        font-family: monospace;
+        font-size: 0.9em;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# Session state
+# ── Session state ───────────────────────────────────────────────────────────────
 if 'user_logged_in' not in st.session_state: st.session_state.user_logged_in = False
 if 'credits' not in st.session_state: st.session_state.credits = 10
 if 'content_mode' not in st.session_state: st.session_state.content_mode = None
 if 'voice_attempt' not in st.session_state: st.session_state.voice_attempt = False
 
-ollama_model = os.getenv("OLLAMA_MODEL", "mannix/llama3.1-8b-lexi")
-a1111_url    = os.getenv("A1111_URL",    "http://127.0.0.1:7860")
+# ── Load & clean environment variables ─────────────────────────────────────────
+ollama_model_raw = os.getenv("OLLAMA_MODEL", "").strip()
+a1111_url_raw    = os.getenv("A1111_URL", "").strip()
 
+ollama_model = ollama_model_raw if ollama_model_raw else "mannix/llama3.1-8b-lexi"
+a1111_url    = a1111_url_raw if a1111_url_raw else "http://127.0.0.1:7860"
+
+# Show configuration warning if vars are missing or empty
+if not ollama_model_raw or not a1111_url_raw:
+    st.markdown("""
+        <div class="config-warning">
+        <strong>Environment variables missing or empty!</strong><br><br>
+        Go to Vercel dashboard → your project → <strong>Settings</strong> → <strong>Environment Variables</strong>.<br>
+        Add exactly these (case-sensitive, no spaces):<br><br>
+        <strong>Name:</strong> OLLAMA_MODEL<br>
+        <strong>Value:</strong> mannix/llama3.1-8b-lexi<br><br>
+        <strong>Name:</strong> A1111_URL<br>
+        <strong>Value:</strong> http://127.0.0.1:7860 (or your real backend URL later)<br><br>
+        Click <strong>Save</strong>, then redeploy the project.
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Debug info to help confirm what Vercel actually sent
+    st.markdown(f"""
+        <div class="debug-info">
+        <strong>Debug (visible only when config missing):</strong><br>
+        OLLAMA_MODEL raw from env: '{ollama_model_raw}'<br>
+        A1111_URL raw from env: '{a1111_url_raw}'<br>
+        Cleaned OLLAMA_MODEL: '{ollama_model}'<br>
+        Cleaned A1111_URL: '{a1111_url}'
+        </div>
+    """, unsafe_allow_html=True)
+
+# ── Voice auth ──────────────────────────────────────────────────────────────────
 def voice_login():
     components.html("""
         <script>
@@ -109,7 +155,7 @@ def voice_login():
                 alert('No match. Try again.');
             }
         };
-        rec.onerror = () => alert('Voice error – check microphone.');
+        rec.onerror = () => alert('Voice error – check microphone permissions.');
         rec.start();
         </script>
     """, height=0)
@@ -124,6 +170,7 @@ def voice_login():
         st.success("Owner privileges activated — unlimited generations.")
         st.rerun()
 
+# ── Login gate ──────────────────────────────────────────────────────────────────
 if not st.session_state.user_logged_in:
     st.title("PornGore.AI")
     st.markdown("Access restricted to verified users and owner.")
